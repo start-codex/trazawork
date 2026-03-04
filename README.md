@@ -1,78 +1,81 @@
-# Mini Jira OSS
+# Taskcore
 
-Mini Jira OSS es una plataforma open source para gestionar trabajo en tableros tipo Kanban/Scrum.
+Taskcore is an open source project management platform for teams. Organize work on Kanban and Scrum-style boards, track issues, and ship faster.
 
-Objetivo:
-- Empezar simple para equipos de desarrollo.
-- Mantener flexibilidad para cualquier negocio (marketing, operaciones, soporte, etc.).
-- Ser mantenible, moderno y extensible.
+## Goals
 
-## Principios
+- Simple enough to start in minutes, flexible enough to grow with your team.
+- Configurable per project: workflows, issue types, and boards adapt to how you work.
+- Lightweight and self-hostable, inspired by the Gitea/Forgejo approach.
 
-- Open source primero: contribuciones claras, documentación y arquitectura modular.
-- Configurable por proyecto: cada proyecto puede definir su propio flujo.
-- MVP mínimo: `Por hacer`, `En curso`, `Finalizado`.
-- Escalable: tipos de trabajo (Epic, HU, Task, Subtask) como configuración, no hardcode.
+## Principles
 
-## Dirección técnica
+- **Open source first** — clear contribution path, modular architecture, no vendor lock-in.
+- **Project-level configuration** — each project defines its own statuses, issue types, and boards.
+- **Minimal defaults** — ships with `To Do`, `In Progress`, `Done` out of the box.
+- **Explicit over magic** — raw SQL, no ORM, no hidden layers.
 
-- Enfoque estilo Gitea/Forgejo: monolito en Go, liviano y fácil de desplegar.
-- UI server-rendered (templates) con mejoras progresivas.
-- API REST para integraciones y clientes externos.
-- Acceso a datos con database/sql + sqlx y queries SQL explícitas.
+## Tech stack
 
-## MVP (fase 1)
+- **Backend:** Go — monolith, `database/sql` + `sqlx`, explicit SQL queries.
+- **Frontend:** SvelteKit + shadcn-svelte.
+- **Database:** PostgreSQL.
+- **Deployment:** Single Docker image, `docker compose` for local dev.
 
-- Gestión de organizaciones/equipos.
-- Proyectos.
-- Tableros por proyecto.
-- Columnas/estados base:
-  - Por hacer
-  - En curso
-  - Finalizado
-- Tareas con:
-  - Título
-  - Descripción
-  - Estado
-  - Prioridad
-  - Responsable
-  - Fecha límite
-- Drag & drop de tareas entre columnas.
-- Historial de cambios básico (auditoría mínima).
+## Roadmap
 
-## Fase 2 (dev-centric)
+### Phase 1 — MVP (current)
+- Workspaces and team membership.
+- Projects with configurable statuses.
+- Boards with columns mapped to statuses.
+- Issues with title, description, status, priority, assignee, and due date.
+- Drag and drop between columns.
 
-- Tipos de issue configurables por proyecto:
-  - Epic
-  - Historia de usuario (HU)
-  - Task
-  - Subtask
-- Relación jerárquica entre issues (Epic -> HU -> Task -> Subtask).
-- Sprint planning básico.
-- Backlog.
+### Phase 2 — Dev-centric
+- Configurable issue types per project (Epic, Story, Task, Subtask).
+- Parent/child relationships between issues.
+- Sprint planning and backlog view.
 
-## Fase 3 (cross-industry)
+### Phase 3 — Cross-industry
+- Project templates (engineering, marketing, support, operations, legal).
+- Basic automations (e.g. notify on status change).
+- Metrics and reports.
 
-- Plantillas por industria (dev, marketing, soporte, legal, operaciones).
-- Automatizaciones básicas (ej. al pasar a Finalizado, notificar).
-- Métricas e informes.
+## Getting started
 
-## Documentación
+```bash
+# Clone and start
+git clone https://github.com/start-codex/taskcore
+cd taskcore
+docker compose up --build
 
-- Alcance de producto: [docs/01-product-scope.md](docs/01-product-scope.md)
-- Arquitectura técnica: [docs/02-architecture.md](docs/02-architecture.md)
-- Modelo de datos inicial: [docs/03-data-model.md](docs/03-data-model.md)
+# App runs at http://localhost:8080
+```
 
-## Decisiones clave
+Create your first user:
 
-1. El flujo de estados es configurable por proyecto.
-2. Los tipos de issue son configurables por proyecto.
-3. Se empieza con defaults simples para acelerar adopción.
-4. Stack base en Go (estilo Gitea/Forgejo), no Node como dependencia principal.
-5. El issue pertenece al proyecto; los boards son vistas configurables (estilo Jira).
+```bash
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "name": "Your Name", "password": "yourpassword"}'
+```
 
-## Licencia
+## API
 
-Sugerida: AGPL-3.0 o MIT.
-- AGPL-3.0 si quieres proteger mejoras en despliegues SaaS.
-- MIT si priorizas adopción máxima.
+All responses follow the envelope format:
+
+```json
+{ "status": 200, "data": {} }
+{ "status": 400, "error": "description" }
+```
+
+## Documentation
+
+- Product scope: [docs/01-product-scope.md](docs/01-product-scope.md)
+- Architecture: [docs/02-architecture.md](docs/02-architecture.md)
+- Data model: [docs/03-data-model.md](docs/03-data-model.md)
+- Go conventions: [docs/04-go-conventions.md](docs/04-go-conventions.md)
+
+## License
+
+AGPL-3.0 — see [LICENSE](LICENSE) for details.
