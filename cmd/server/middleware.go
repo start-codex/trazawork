@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -42,6 +43,9 @@ func withLogger(next http.Handler) http.Handler {
 		sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
 		start := time.Now()
 		next.ServeHTTP(sw, r)
+		if strings.HasPrefix(r.URL.Path, "/_app/") {
+			return
+		}
 		slog.Info("request",
 			"method", r.Method,
 			"path", r.URL.Path,
