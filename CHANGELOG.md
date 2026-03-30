@@ -29,6 +29,9 @@ Contributors should add ongoing changes to the `Unreleased` section. When a mile
 - Added project-member creation guard: target user must be a workspace member
 - Added `sessions.IsAuthError` helper for centralized error classification
 - Added `RequireWorkspaceAdmin` to `internal/authz` for admin/owner role enforcement
+- Added `ApiError` class to frontend API client for typed HTTP error handling
+- Added `auth.me()` and `auth.logout()` to frontend API client
+- Added `signIn()`, `restore()`, and `logout()` to frontend auth store
 - Added BSL 1.1 license (replaces AGPL-3.0) with Apache 2.0 change license after 4 years per version
 - Added Contributor License Agreement (CLA.md)
 - Added Contributing guide (CONTRIBUTING.md)
@@ -45,6 +48,10 @@ Contributors should add ongoing changes to the `Unreleased` section. When a mile
 - Changed `POST /projects/{projectID}/issues` to derive reporter from authenticated session (removed `reporter_id` from request body)
 - Changed workspace admin routes (`DELETE /workspaces/{id}`, member management) to require admin/owner role
 - Changed project admin routes (`POST /workspaces/{id}/projects`, `DELETE /projects/{id}`, member management) to require workspace admin/owner role
+- Changed workflow config routes (boards, columns, statuses, issue types) to require workspace admin/owner role
+- Changed frontend auth from localStorage to session-based `/auth/me` validation
+- Changed frontend auth store to in-memory only (removed localStorage persistence)
+- Changed frontend logout to call backend `POST /auth/logout` before clearing state
 - Changed authz resource resolution to allow archived projects, boards, and columns (domain handlers decide visibility)
 - Changed project name from Taskcore to Traza Work, then to Tookly
 - Changed license from AGPL-3.0 to BSL 1.1

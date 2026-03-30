@@ -10,7 +10,7 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import BuildingIcon from '@lucide/svelte/icons/building-2';
 	import { workspaces as workspacesApi } from '$lib/api';
-	import { currentUser } from '$lib/stores/auth';
+
 	import * as m from '$lib/paraglide/messages';
 	import { i18n } from '$lib/i18n.svelte';
 
@@ -37,8 +37,6 @@
 	let wsSaving = $state(false);
 
 	onMount(async () => {
-		const user = $currentUser;
-		if (!user) { goto('/login'); return; }
 		try {
 			const list = await workspacesApi.list();
 			if (list && list.length > 0) {

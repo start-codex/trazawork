@@ -3,9 +3,13 @@
 
 import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
+import { restore } from '$lib/stores/auth';
 
-export function load() {
-	if (browser && !localStorage.getItem('user')) {
-		redirect(302, '/login');
-	}
+export const ssr = false;
+
+export async function load() {
+	if (!browser) return;
+
+	const user = await restore();
+	if (!user) redirect(302, '/login');
 }

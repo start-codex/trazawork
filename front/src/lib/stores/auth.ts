@@ -2,29 +2,39 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 import { writable } from 'svelte/store';
-import type { User } from '$lib/api';
+import { goto } from '$app/navigation';
+import { auth as authApi, type User } from '$lib/api';
 
-const STORAGE_KEY = 'user';
-
-function loadFromStorage(): User | null {
-	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		return raw ? (JSON.parse(raw) as User) : null;
-	} catch {
-		return null;
-	}
-}
-
-const _store = writable<User | null>(loadFromStorage());
+const _store = writable<User | null>(null);
 
 export const currentUser = { subscribe: _store.subscribe };
 
 export function login(user: User): void {
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
 	_store.set(user);
 }
 
-export function logout(): void {
-	localStorage.removeItem(STORAGE_KEY);
+export async function signIn(email: string, password: string): Promise<User> {
+	const user = await authApi.login({ email, password });
+	_store.set(user);
+	return user;
+}
+
+export async function restore(): Promise<User | null> {
+	const res = await authApi.me();
+	if (res.authenticated && res.user) {
+		_store.set(res.user);
+		return res.user;
+	}
 	_store.set(null);
+	return null;
+}
+
+export async function logout(): Promise<void> {
+	try {
+		await authApi.logout();
+	} catch {
+		// best effort
+	}
+	_store.set(null);
+	goto('/login');
 }

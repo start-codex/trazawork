@@ -11,7 +11,7 @@
 	import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
 	import LogOutIcon from "@lucide/svelte/icons/log-out";
 	import SettingsIcon from "@lucide/svelte/icons/settings";
-	import { currentUser, logout } from '$lib/stores/auth';
+	import { currentUser, logout as doLogout } from '$lib/stores/auth';
 	import * as m from '$lib/paraglide/messages';
 	import { i18n } from '$lib/i18n.svelte';
 
@@ -31,8 +31,7 @@
 	}
 
 	function handleLogout() {
-		logout();
-		goto('/login');
+		doLogout();
 	}
 </script>
 

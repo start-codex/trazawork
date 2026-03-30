@@ -44,7 +44,12 @@ func fail(w http.ResponseWriter, err error) {
 func handleCreate(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projID := r.PathValue("projectID")
-		if _, err := authz.RequireProjectMembership(r.Context(), db, projID); err != nil {
+		wsID, err := authz.RequireProjectMembership(r.Context(), db, projID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}
@@ -93,7 +98,12 @@ func handleList(db *sqlx.DB) http.HandlerFunc {
 func handleUpdate(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projID := r.PathValue("projectID")
-		if _, err := authz.RequireProjectMembership(r.Context(), db, projID); err != nil {
+		wsID, err := authz.RequireProjectMembership(r.Context(), db, projID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}
@@ -127,7 +137,12 @@ func handleUpdate(db *sqlx.DB) http.HandlerFunc {
 func handleArchive(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projID := r.PathValue("projectID")
-		if _, err := authz.RequireProjectMembership(r.Context(), db, projID); err != nil {
+		wsID, err := authz.RequireProjectMembership(r.Context(), db, projID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}

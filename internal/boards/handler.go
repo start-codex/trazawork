@@ -49,7 +49,12 @@ func fail(w http.ResponseWriter, err error) {
 func handleCreate(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projID := r.PathValue("projectID")
-		if _, err := authz.RequireProjectMembership(r.Context(), db, projID); err != nil {
+		wsID, err := authz.RequireProjectMembership(r.Context(), db, projID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}
@@ -116,7 +121,12 @@ func handleGet(db *sqlx.DB) http.HandlerFunc {
 func handleArchive(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		boardID := r.PathValue("boardID")
-		if _, _, err := authz.RequireBoardAccess(r.Context(), db, boardID); err != nil {
+		wsID, _, err := authz.RequireBoardAccess(r.Context(), db, boardID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}
@@ -131,7 +141,12 @@ func handleArchive(db *sqlx.DB) http.HandlerFunc {
 func handleAddColumn(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		boardID := r.PathValue("boardID")
-		if _, _, err := authz.RequireBoardAccess(r.Context(), db, boardID); err != nil {
+		wsID, _, err := authz.RequireBoardAccess(r.Context(), db, boardID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}
@@ -175,7 +190,12 @@ func handleListColumns(db *sqlx.DB) http.HandlerFunc {
 func handleArchiveColumn(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		colID := r.PathValue("columnID")
-		if _, _, _, err := authz.RequireColumnAccess(r.Context(), db, colID); err != nil {
+		wsID, _, _, err := authz.RequireColumnAccess(r.Context(), db, colID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}
@@ -190,7 +210,12 @@ func handleArchiveColumn(db *sqlx.DB) http.HandlerFunc {
 func handleAssignStatus(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		colID := r.PathValue("columnID")
-		if _, _, _, err := authz.RequireColumnAccess(r.Context(), db, colID); err != nil {
+		wsID, _, _, err := authz.RequireColumnAccess(r.Context(), db, colID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}
@@ -212,7 +237,12 @@ func handleAssignStatus(db *sqlx.DB) http.HandlerFunc {
 func handleUnassignStatus(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		colID := r.PathValue("columnID")
-		if _, _, _, err := authz.RequireColumnAccess(r.Context(), db, colID); err != nil {
+		wsID, _, _, err := authz.RequireColumnAccess(r.Context(), db, colID)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		if err := authz.RequireWorkspaceAdmin(r.Context(), db, wsID); err != nil {
 			fail(w, err)
 			return
 		}

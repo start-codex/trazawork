@@ -10,6 +10,14 @@ interface ApiResponse<T> {
 	message?: string;
 }
 
+export class ApiError extends Error {
+	status: number;
+	constructor(status: number, message: string) {
+		super(message);
+		this.status = status;
+	}
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
 	const res = await fetch(`${BASE}${path}`, {
 		method,
@@ -22,7 +30,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 	const json: ApiResponse<T> = await res.json().catch(() => ({ status: res.status, error: res.statusText }));
 
 	if (!res.ok) {
-		throw new Error(json.error ?? res.statusText);
+		throw new ApiError(res.status, json.error ?? res.statusText);
 	}
 
 	return json.data as T;
@@ -35,7 +43,9 @@ const del = (path: string) => request<void>('DELETE', path);
 
 // --- Auth ---
 export const auth = {
-	login: (body: { email: string; password: string }) => post<User>('/auth/login', body)
+	login: (body: { email: string; password: string }) => post<User>('/auth/login', body),
+	me: () => get<{ authenticated: boolean; user?: User }>('/auth/me'),
+	logout: () => post<void>('/auth/logout', {})
 };
 
 // --- Users ---

@@ -641,5 +641,262 @@ func TestAdminWiring_MemberReadNoRegression(t *testing.T) {
 	}
 }
 
+func seedColumn(t *testing.T, db *sqlx.DB, boardID string) string {
+	t.Helper()
+	var id string
+	err := db.QueryRowContext(context.Background(),
+		`INSERT INTO board_columns (board_id, name, position) VALUES ($1, $2, 0) RETURNING id`,
+		boardID, "Col "+testpg.UniqueSuffix(t, db),
+	).Scan(&id)
+	if err != nil {
+		t.Fatalf("seed column: %v", err)
+	}
+	return id
+}
+
+func seedStatus(t *testing.T, db *sqlx.DB, projectID string) string {
+	t.Helper()
+	var id string
+	err := db.QueryRowContext(context.Background(),
+		`INSERT INTO statuses (project_id, name, category, position) VALUES ($1, $2, 'todo', 0) RETURNING id`,
+		projectID, "Status "+testpg.UniqueSuffix(t, db),
+	).Scan(&id)
+	if err != nil {
+		t.Fatalf("seed status: %v", err)
+	}
+	return id
+}
+
+func seedIssueType(t *testing.T, db *sqlx.DB, projectID string) string {
+	t.Helper()
+	var id string
+	err := db.QueryRowContext(context.Background(),
+		`INSERT INTO issue_types (project_id, name, icon, level) VALUES ($1, $2, 'task', 0) RETURNING id`,
+		projectID, "Type "+testpg.UniqueSuffix(t, db),
+	).Scan(&id)
+	if err != nil {
+		t.Fatalf("seed issue type: %v", err)
+	}
+	return id
+}
+
+// TestWorkflowAdmin_Boards verifies board write routes require admin.
+func TestWorkflowAdmin_Boards(t *testing.T) {
+	db := testpg.Open(t)
+	testpg.EnsureMigrated(t, db)
+	srv := setupTestServer(t, db)
+
+	admin := testpg.SeedUser(t, db)
+	member := testpg.SeedUser(t, db)
+	wsID := testpg.SeedWorkspace(t, db)
+	seedMember(t, db, wsID, admin, "admin")
+	seedMember(t, db, wsID, member, "member")
+	projID := testpg.SeedProject(t, db, wsID, "BWFL")
+	boardID := seedBoard(t, db, projID)
+	colID := seedColumn(t, db, boardID)
+	statusID := seedStatus(t, db, projID)
+
+	memberToken := loginCookie(t, db, member)
+	adminToken := loginCookie(t, db, admin)
+
+	// POST /projects/{id}/boards — member 403, admin 201
+	envD := doRequestWithBody(t, srv, "POST", "/projects/"+projID+"/boards", memberToken, map[string]string{
+		"name": "B1", "type": "kanban",
+	})
+	if envD.Status != 403 {
+		t.Fatalf("member POST boards: %d, want 403", envD.Status)
+	}
+	envD = doRequestWithBody(t, srv, "POST", "/projects/"+projID+"/boards", adminToken, map[string]string{
+		"name": "B2", "type": "kanban",
+	})
+	if envD.Status != 201 {
+		t.Fatalf("admin POST boards: %d, want 201 (error: %s)", envD.Status, envD.Error)
+	}
+
+	// DELETE /boards/{id} — member 403, admin 204
+	env := doRequest(t, srv, "DELETE", "/boards/"+boardID, memberToken)
+	if env.Status != 403 {
+		t.Fatalf("member DELETE board: %d, want 403", env.Status)
+	}
+	env = doRequest(t, srv, "DELETE", "/boards/"+boardID, adminToken)
+	if env.Status != 204 {
+		t.Fatalf("admin DELETE board: %d, want 204 (error: %s)", env.Status, env.Error)
+	}
+
+	// POST /boards/{id}/columns — member 403, admin 201
+	boardID2 := seedBoard(t, db, projID)
+	envD = doRequestWithBody(t, srv, "POST", "/boards/"+boardID2+"/columns", memberToken, map[string]string{
+		"name": "C1",
+	})
+	if envD.Status != 403 {
+		t.Fatalf("member POST column: %d, want 403", envD.Status)
+	}
+	envD = doRequestWithBody(t, srv, "POST", "/boards/"+boardID2+"/columns", adminToken, map[string]string{
+		"name": "C2",
+	})
+	if envD.Status != 201 {
+		t.Fatalf("admin POST column: %d, want 201 (error: %s)", envD.Status, envD.Error)
+	}
+
+	// DELETE /columns/{id} — member 403, admin 204
+	env = doRequest(t, srv, "DELETE", "/columns/"+colID, memberToken)
+	if env.Status != 403 {
+		t.Fatalf("member DELETE column: %d, want 403", env.Status)
+	}
+	env = doRequest(t, srv, "DELETE", "/columns/"+colID, adminToken)
+	if env.Status != 204 {
+		t.Fatalf("admin DELETE column: %d, want 204 (error: %s)", env.Status, env.Error)
+	}
+
+	// POST /columns/{id}/statuses — member 403, admin 204
+	colID2 := seedColumn(t, db, boardID2)
+	envD = doRequestWithBody(t, srv, "POST", "/columns/"+colID2+"/statuses", memberToken, map[string]string{
+		"status_id": statusID,
+	})
+	if envD.Status != 403 {
+		t.Fatalf("member POST assign status: %d, want 403", envD.Status)
+	}
+	envD = doRequestWithBody(t, srv, "POST", "/columns/"+colID2+"/statuses", adminToken, map[string]string{
+		"status_id": statusID,
+	})
+	if envD.Status != 204 {
+		t.Fatalf("admin POST assign status: %d, want 204 (error: %s)", envD.Status, envD.Error)
+	}
+
+	// DELETE /columns/{id}/statuses/{statusID} — member 403, admin 204
+	env = doRequest(t, srv, "DELETE", "/columns/"+colID2+"/statuses/"+statusID, memberToken)
+	if env.Status != 403 {
+		t.Fatalf("member DELETE unassign status: %d, want 403", env.Status)
+	}
+	env = doRequest(t, srv, "DELETE", "/columns/"+colID2+"/statuses/"+statusID, adminToken)
+	if env.Status != 204 {
+		t.Fatalf("admin DELETE unassign status: %d, want 204 (error: %s)", env.Status, env.Error)
+	}
+
+	// GET /boards/{id} — member 200 (no regression)
+	env = doRequest(t, srv, "GET", "/boards/"+boardID2, memberToken)
+	if env.Status != 200 {
+		t.Fatalf("member GET board: %d, want 200", env.Status)
+	}
+
+	// GET /boards/{id}/columns — member 200 (no regression)
+	env = doRequest(t, srv, "GET", "/boards/"+boardID2+"/columns", memberToken)
+	if env.Status != 200 {
+		t.Fatalf("member GET columns: %d, want 200", env.Status)
+	}
+}
+
+// TestWorkflowAdmin_Statuses verifies status write routes require admin.
+func TestWorkflowAdmin_Statuses(t *testing.T) {
+	db := testpg.Open(t)
+	testpg.EnsureMigrated(t, db)
+	srv := setupTestServer(t, db)
+
+	admin := testpg.SeedUser(t, db)
+	member := testpg.SeedUser(t, db)
+	wsID := testpg.SeedWorkspace(t, db)
+	seedMember(t, db, wsID, admin, "admin")
+	seedMember(t, db, wsID, member, "member")
+	projID := testpg.SeedProject(t, db, wsID, "SWFL")
+	statusID := seedStatus(t, db, projID)
+
+	memberToken := loginCookie(t, db, member)
+	adminToken := loginCookie(t, db, admin)
+
+	suffix := testpg.UniqueSuffix(t, db)
+
+	// POST /projects/{id}/statuses — member 403, admin 201
+	envD := doRequestWithBody(t, srv, "POST", "/projects/"+projID+"/statuses", memberToken, map[string]string{
+		"name": "S " + suffix, "category": "todo",
+	})
+	if envD.Status != 403 {
+		t.Fatalf("member POST status: %d, want 403", envD.Status)
+	}
+	envD = doRequestWithBody(t, srv, "POST", "/projects/"+projID+"/statuses", adminToken, map[string]string{
+		"name": "S " + suffix, "category": "in_progress",
+	})
+	if envD.Status != 201 {
+		t.Fatalf("admin POST status: %d, want 201 (error: %s)", envD.Status, envD.Error)
+	}
+
+	// PUT /projects/{id}/statuses/{statusID} — member 403, admin 200
+	envD = doRequestWithBody(t, srv, "PUT", "/projects/"+projID+"/statuses/"+statusID, memberToken, map[string]string{
+		"name": "Updated", "category": "done",
+	})
+	if envD.Status != 403 {
+		t.Fatalf("member PUT status: %d, want 403", envD.Status)
+	}
+	envD = doRequestWithBody(t, srv, "PUT", "/projects/"+projID+"/statuses/"+statusID, adminToken, map[string]string{
+		"name": "Updated", "category": "done",
+	})
+	if envD.Status != 200 {
+		t.Fatalf("admin PUT status: %d, want 200 (error: %s)", envD.Status, envD.Error)
+	}
+
+	// DELETE /projects/{id}/statuses/{statusID} — member 403, admin 204
+	env := doRequest(t, srv, "DELETE", "/projects/"+projID+"/statuses/"+statusID, memberToken)
+	if env.Status != 403 {
+		t.Fatalf("member DELETE status: %d, want 403", env.Status)
+	}
+	env = doRequest(t, srv, "DELETE", "/projects/"+projID+"/statuses/"+statusID, adminToken)
+	if env.Status != 204 {
+		t.Fatalf("admin DELETE status: %d, want 204 (error: %s)", env.Status, env.Error)
+	}
+
+	// GET /projects/{id}/statuses — member 200 (no regression)
+	env = doRequest(t, srv, "GET", "/projects/"+projID+"/statuses", memberToken)
+	if env.Status != 200 {
+		t.Fatalf("member GET statuses: %d, want 200", env.Status)
+	}
+}
+
+// TestWorkflowAdmin_IssueTypes verifies issue type write routes require admin.
+func TestWorkflowAdmin_IssueTypes(t *testing.T) {
+	db := testpg.Open(t)
+	testpg.EnsureMigrated(t, db)
+	srv := setupTestServer(t, db)
+
+	admin := testpg.SeedUser(t, db)
+	member := testpg.SeedUser(t, db)
+	wsID := testpg.SeedWorkspace(t, db)
+	seedMember(t, db, wsID, admin, "admin")
+	seedMember(t, db, wsID, member, "member")
+	projID := testpg.SeedProject(t, db, wsID, "IWFL")
+	issueTypeID := seedIssueType(t, db, projID)
+
+	memberToken := loginCookie(t, db, member)
+	adminToken := loginCookie(t, db, admin)
+
+	// POST /projects/{id}/issue-types — member 403, admin 201
+	envD := doRequestWithBody(t, srv, "POST", "/projects/"+projID+"/issue-types", memberToken, map[string]any{
+		"name": "Bug", "icon": "bug", "level": 0,
+	})
+	if envD.Status != 403 {
+		t.Fatalf("member POST issue-type: %d, want 403", envD.Status)
+	}
+	envD = doRequestWithBody(t, srv, "POST", "/projects/"+projID+"/issue-types", adminToken, map[string]any{
+		"name": "Bug", "icon": "bug", "level": 0,
+	})
+	if envD.Status != 201 {
+		t.Fatalf("admin POST issue-type: %d, want 201 (error: %s)", envD.Status, envD.Error)
+	}
+
+	// DELETE /projects/{id}/issue-types/{issueTypeID} — member 403, admin 204
+	env := doRequest(t, srv, "DELETE", "/projects/"+projID+"/issue-types/"+issueTypeID, memberToken)
+	if env.Status != 403 {
+		t.Fatalf("member DELETE issue-type: %d, want 403", env.Status)
+	}
+	env = doRequest(t, srv, "DELETE", "/projects/"+projID+"/issue-types/"+issueTypeID, adminToken)
+	if env.Status != 204 {
+		t.Fatalf("admin DELETE issue-type: %d, want 204 (error: %s)", env.Status, env.Error)
+	}
+
+	// GET /projects/{id}/issue-types — member 200 (no regression)
+	env = doRequest(t, srv, "GET", "/projects/"+projID+"/issue-types", memberToken)
+	if env.Status != 200 {
+		t.Fatalf("member GET issue-types: %d, want 200", env.Status)
+	}
+}
+
 // Ensure authz import is used (it's needed for the test to compile with the right module).
 var _ = authz.ErrForbidden

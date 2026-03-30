@@ -50,7 +50,7 @@ Close the gap between what the backend supports and what the UI delivers. Delive
 - PR 3 `[shipped]` — Membership authorization: `internal/authz` with context helpers and workspace membership enforcement on all API routes (read and write). Consolidated `internal/authctx` into `internal/authz`.
 - PR 4 `[shipped]` — Remove client-controlled identity: drop `owner_id`, `reporter_id`, `user_id` from API contracts; derive from session.
 - PR 5 `[shipped]` — Admin/owner authorization for workspace and project administration.
-- PR 6 `[pending]` — Frontend session migration (replace auth localStorage with `/auth/me`) and workflow configuration admin enforcement.
+- PR 6 `[shipped]` — Frontend session migration (replace auth localStorage with `/auth/me`) and workflow configuration admin enforcement.
 
 **Other Phase 1 items:**
 - **Board UI — drag-and-drop**: wire the frontend to `MoveIssue`; issues move between columns with correct position updates.

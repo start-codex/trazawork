@@ -14,8 +14,7 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { cn } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import { auth } from '$lib/api';
-	import { login } from '$lib/stores/auth';
+	import { signIn } from '$lib/stores/auth';
 	import * as m from '$lib/paraglide/messages';
 	import { i18n } from '$lib/i18n.svelte';
 
@@ -47,8 +46,7 @@
 		errorMessage = '';
 		loading = true;
 		try {
-			const user = await auth.login({ email, password });
-			login(user);
+			await signIn(email, password);
 			goto('/');
 		} catch (err) {
 			errorMessage = err instanceof Error ? err.message : t.submit;
