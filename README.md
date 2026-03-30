@@ -31,8 +31,10 @@ What is shipped today:
 - Kanban and Scrum project templates (preconfigure statuses and one default board).
 - Boards, statuses, issue types, issues CRUD.
 - `MoveIssue` API (backend and API layer complete).
-- `POST /api/auth/login` endpoint.
+- Local email/password authentication with server-side sessions.
 - Internationalization: English and Spanish.
+
+Not in the current baseline yet: SMTP delivery, password reset, user invitations, SSO/OIDC, or a first-install global admin bootstrap flow.
 
 See [docs/05-roadmap.md](docs/05-roadmap.md) for what is in progress and planned.
 
@@ -49,7 +51,8 @@ See [docs/05-roadmap.md](docs/05-roadmap.md) for the full phased roadmap.
 
 Summary:
 - **Phase 0 — Foundation** `[shipped]` — core backend, domains, templates, i18n.
-- **Phase 1 — MVP hardening** `[in progress]` — full auth, membership enforcement, board UI, issue detail.
+- **Phase 1 — MVP hardening** `[shipped]` — full auth, membership enforcement, board UI, issue detail.
+- **Phase 1.5 — Identity, onboarding, and instance admin** `[planned]` — SMTP, password reset, invitations, SSO/OIDC, first-install bootstrap.
 - **Phase 2 — Software workflow depth** `[planned]` — issue hierarchy, sprints, backlog, planning board.
 - **Phase 3 — Documentation-led planning** `[planned]` — project pages, decision records, doc↔work item links.
 - **Phase 4 — Cross-industry templates** `[planned]` — workflow presets for HR, legal, marketing, sales, and more.
