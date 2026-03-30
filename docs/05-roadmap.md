@@ -40,7 +40,7 @@ The core platform infrastructure and first working end-to-end flow.
 
 ---
 
-## Phase 1 — MVP hardening `[in progress]`
+## Phase 1 — MVP hardening `[shipped]`
 
 Close the gap between what the backend supports and what the UI delivers. Deliver a fully usable, secure baseline.
 
@@ -56,6 +56,37 @@ Close the gap between what the backend supports and what the UI delivers. Delive
 - **Board UI — drag-and-drop**: wire the frontend to `MoveIssue`; issues move between columns with correct position updates.
 - **Issue detail page**: view and edit title, description, priority, assignee, due date.
 - **Basic board filters**: filter by assignee, priority, and issue type.
+
+---
+
+## Phase 1.5 — Identity, onboarding, and instance admin `[planned]`
+
+Make self-hosted deployments operable beyond basic local login. This phase covers the missing identity and bootstrap capabilities that sit between MVP auth and broader platform workflows.
+
+**Transactional email foundation**
+- Instance-level SMTP configuration.
+- Email templates and delivery pipeline for system emails.
+- Delivery status, retry handling, and safe tokenized links for user-facing flows.
+
+**Account lifecycle**
+- Forgot-password / reset-password flow with expiring tokens.
+- Change-password flow for authenticated users.
+- Optional email verification for newly created accounts.
+
+**Invitations**
+- Invite user by email into the instance or a workspace.
+- Pending invitation model with resend, revoke, and expiration.
+- Invitation acceptance flow that creates or links the user account and assigns the intended role.
+
+**Federated identity**
+- OpenID Connect (OIDC) / SSO login with external identity providers.
+- Account linking strategy for existing local users.
+- Just-in-time provisioning policy and post-login membership mapping.
+
+**Instance bootstrap**
+- First-install flow to create the initial global administrator.
+- Initial system configuration, including system-wide legal/terms text when the deployment requires it.
+- Separation between instance-wide administration and workspace/project administration.
 
 ---
 
@@ -141,6 +172,7 @@ Add intelligence and visibility on top of the workflow.
 - Rule-based triggers: "when status changes to Done → notify assignee".
 - Initial rules: status change, assignment change, due date approaching.
 - Rules are configured per project.
+- Email notifications for workflow events use the transactional email channel introduced in Phase 1.5; webhooks remain available for external systems.
 
 **Reporting and metrics**
 - Project dashboard: throughput, cycle time, open items by type and priority.
@@ -154,3 +186,36 @@ Add intelligence and visibility on top of the workflow.
 **Assisted transformations (deferred)**
 - Assisted derivation of backlog items or sprint scope from documentation content.
 - Only introduced here, after the manual-first foundation of Phase 3 is established.
+
+---
+
+## Phase 6 — AI assistant and MCP `[planned]`
+
+Workflow-oriented assistant that helps teams query, draft, structure and execute within Tookly. See [docs/06-ai-assistant.md](06-ai-assistant.md) for full details.
+
+**Provider configuration**
+- Provider-agnostic: configurable via API per workspace or instance.
+- Supported providers: OpenAI/GPT, Anthropic/Claude, Google/Gemini, Ollama, or any compatible API.
+- Configuration: endpoint URL, API key, model name.
+- Without a configured provider, AI features are unavailable but Tookly works normally.
+
+**Assistant / Copilot**
+- Chat interface for querying workspace data (issues, boards, projects, members).
+- Assisted drafting and structuring of documentation pages.
+- Execution of Tookly operations under the authenticated user's session and permissions.
+- No AI superuser — if the user lacks permissions, the operation fails as in UI.
+
+**Proposals**
+- Unified `Proposal` model for changes suggested by AI or by a human.
+- Same shape: origin (human/ai), author, target entity, payload.
+- Same execution flow and permission model regardless of origin.
+
+**MCP integration**
+- Connectors to read and act on external systems (Git, CI, messaging, etc.).
+- Scoped by the authenticated user's session and permissions.
+- Extensible connector model for self-hosted environments.
+
+**Documentation**
+- Project pages persisted as editable Markdown.
+- Predefined templates/forms to structure initial content.
+- Free editing after creation — no semantic graph or canonical types.

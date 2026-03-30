@@ -67,12 +67,17 @@ What exists in the codebase today:
 - Issue types: per-project, configurable (e.g. Task, Bug, Epic, Story).
 - Issues CRUD: create, read, list, update, archive.
 - `MoveIssue`: backend and API layer complete; UI drag-and-drop is not yet wired.
+- Local accounts and sessions: users can be created directly in Tookly and authenticate with email + password.
 - Internationalization: English and Spanish via Paraglide.
 
 **Not yet shipped:**
 
 - Drag-and-drop board UI (backend ready; frontend not wired).
-- Cookie-based auth and authorization enforcement (`POST /api/auth/login` exists; session storage layer shipped with hashed tokens and archived-user rejection; middleware, cookie handling, and per-handler enforcement are not yet shipped).
+- Advanced identity flows: password reset, change-password UX, account recovery, and email verification.
+- Transactional email delivery: SMTP configuration, email templates, retries, and outbound notifications.
+- User invitations: invite by email, pending invite lifecycle, accept/revoke/resend flows, and role assignment during invite acceptance.
+- SSO / federated login: OpenID Connect (OIDC), external identity providers, and just-in-time user provisioning.
+- Instance bootstrap and global administration: first-install setup, creation of the first global super admin, acceptance/configuration of system terms, and instance-wide settings.
 - Wiki/documentation pages.
 - Full methodology customization (custom fields per issue, configurable transition rules, richer workflow rules).
 
@@ -128,6 +133,8 @@ This relationship is **manual first**: documentation and execution artifacts are
 - Cross-industry workflow templates.
 - Custom fields per project.
 - Rule-based automations (e.g. notify on status change).
+- Transactional email flows for invitations, password reset, and system notifications.
+- Identity federation and instance-level administration for self-hosted deployments.
 - Audit trail and event log.
 - Project documentation pages with decision records.
 - Explicit links between documentation pages and work items.
