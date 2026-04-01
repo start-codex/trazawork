@@ -21,13 +21,14 @@ var (
 )
 
 type User struct {
-	ID           string     `db:"id"            json:"id"`
-	Email        string     `db:"email"         json:"email"`
-	Name         string     `db:"name"          json:"name"`
-	CreatedAt    time.Time  `db:"created_at"    json:"created_at"`
-	UpdatedAt    time.Time  `db:"updated_at"    json:"updated_at"`
-	ArchivedAt   *time.Time `db:"archived_at"   json:"archived_at,omitempty"`
-	PasswordHash string     `db:"password_hash" json:"-"`
+	ID              string     `db:"id"               json:"id"`
+	Email           string     `db:"email"            json:"email"`
+	Name            string     `db:"name"             json:"name"`
+	IsInstanceAdmin bool       `db:"is_instance_admin" json:"is_instance_admin"`
+	CreatedAt       time.Time  `db:"created_at"       json:"created_at"`
+	UpdatedAt       time.Time  `db:"updated_at"       json:"updated_at"`
+	ArchivedAt      *time.Time `db:"archived_at"      json:"archived_at,omitempty"`
+	PasswordHash    string     `db:"password_hash"    json:"-"`
 }
 
 type CreateUserParams struct {
@@ -57,6 +58,17 @@ func CreateUser(ctx context.Context, db *sqlx.DB, params CreateUserParams) (User
 		return User{}, err
 	}
 	return createUser(ctx, db, params)
+}
+
+// CreateInstanceAdminTx creates a user with is_instance_admin=true within an existing transaction.
+func CreateInstanceAdminTx(ctx context.Context, tx *sqlx.Tx, params CreateUserParams) (User, error) {
+	if tx == nil {
+		return User{}, errors.New("tx is required")
+	}
+	if err := params.Validate(); err != nil {
+		return User{}, err
+	}
+	return createInstanceAdminTx(ctx, tx, params)
 }
 
 func GetUser(ctx context.Context, db *sqlx.DB, id string) (User, error) {

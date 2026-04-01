@@ -11,6 +11,11 @@ Contributors should add ongoing changes to the `Unreleased` section. When a mile
 ## [Unreleased]
 
 ### Added
+- Added instance bootstrap flow: `POST /instance/bootstrap` creates first admin user atomically with `SELECT FOR UPDATE`
+- Added `GET /instance/status` endpoint for checking initialization state
+- Added `is_instance_admin` field to users for instance-level administration
+- Added `RequireInstanceAdmin` to `internal/authz` for instance admin enforcement
+- Added `POST /users` blocked (409) before instance bootstrap, public after
 - Added `instance_config` table and `internal/instance` package for instance-level key-value configuration
 - Added session storage foundation (`internal/sessions`): `Create`, `Validate`, `Delete`
 - Added SHA-256 token hashing — raw tokens never stored in the database

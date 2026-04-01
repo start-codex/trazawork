@@ -40,6 +40,29 @@ func createSession(ctx context.Context, db *sqlx.DB, userID string, ttl time.Dur
 	return CreateResult{Session: session, RawToken: rawToken}, nil
 }
 
+func createSessionTx(ctx context.Context, tx *sqlx.Tx, userID string, ttl time.Duration) (CreateResult, error) {
+	rawToken, err := GenerateToken()
+	if err != nil {
+		return CreateResult{}, fmt.Errorf("generate token: %w", err)
+	}
+
+	hashedToken := HashToken(rawToken)
+	now := time.Now()
+	expiresAt := now.Add(ttl)
+
+	var session Session
+	err = tx.QueryRowxContext(ctx,
+		`INSERT INTO sessions (id, user_id, created_at, expires_at, last_used_at)
+		 VALUES ($1, $2, $3, $4, $5)
+		 RETURNING id, user_id, created_at, expires_at, last_used_at`,
+		hashedToken, userID, now, expiresAt, now,
+	).StructScan(&session)
+	if err != nil {
+		return CreateResult{}, fmt.Errorf("insert session: %w", err)
+	}
+	return CreateResult{Session: session, RawToken: rawToken}, nil
+}
+
 func validateSession(ctx context.Context, db *sqlx.DB, rawToken string) (Session, error) {
 	hashedToken := HashToken(rawToken)
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/start-codex/tookly/internal/boards"
+	"github.com/start-codex/tookly/internal/instance"
 	"github.com/start-codex/tookly/internal/issues"
 	"github.com/start-codex/tookly/internal/issuetypes"
 	"github.com/start-codex/tookly/internal/projects"
@@ -21,6 +22,7 @@ import (
 // newAPIHandler builds the API sub-mux with auth middleware and all domain routes.
 func newAPIHandler(db *sqlx.DB) http.Handler {
 	api := http.NewServeMux()
+	instance.RegisterRoutes(api, db)
 	users.RegisterRoutes(api, db)
 	workspaces.RegisterRoutes(api, db)
 	projects.RegisterRoutes(api, db)
