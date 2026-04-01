@@ -75,6 +75,17 @@
   "settings_users_title": "Users",
   "settings_account_title": "Account",
 
+  "account_change_password": "Change password",
+  "account_current_password": "Current password",
+  "account_new_password": "New password",
+  "account_confirm_password": "Confirm new password",
+  "account_password_changed": "Password changed successfully",
+  "account_passwords_mismatch": "Passwords do not match",
+  "account_current_password_invalid": "Current password is incorrect",
+  "account_password_too_short": "Password must be at least 8 characters",
+  "account_save": "Save",
+  "account_saving": "Saving…",
+
   "nav_admin": "Admin",
   "admin_title": "Administration",
   "admin_smtp_title": "SMTP Configuration",

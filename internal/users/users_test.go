@@ -16,11 +16,12 @@ func TestCreateUserParams_Validate(t *testing.T) {
 		params  CreateUserParams
 		wantErr bool
 	}{
-		{name: "valid", params: CreateUserParams{Email: "alice@example.com", Name: "Alice", Password: "secret"}, wantErr: false},
-		{name: "missing name", params: CreateUserParams{Email: "alice@example.com", Name: "", Password: "secret"}, wantErr: true},
-		{name: "missing email", params: CreateUserParams{Email: "", Name: "Alice", Password: "secret"}, wantErr: true},
-		{name: "email without @", params: CreateUserParams{Email: "notanemail", Name: "Alice", Password: "secret"}, wantErr: true},
+		{name: "valid", params: CreateUserParams{Email: "alice@example.com", Name: "Alice", Password: "secretpass"}, wantErr: false},
+		{name: "missing name", params: CreateUserParams{Email: "alice@example.com", Name: "", Password: "secretpass"}, wantErr: true},
+		{name: "missing email", params: CreateUserParams{Email: "", Name: "Alice", Password: "secretpass"}, wantErr: true},
+		{name: "email without @", params: CreateUserParams{Email: "notanemail", Name: "Alice", Password: "secretpass"}, wantErr: true},
 		{name: "missing password", params: CreateUserParams{Email: "alice@example.com", Name: "Alice", Password: ""}, wantErr: true},
+		{name: "password too short", params: CreateUserParams{Email: "alice@example.com", Name: "Alice", Password: "short"}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

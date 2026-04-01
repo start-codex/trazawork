@@ -8,16 +8,20 @@ package users
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 )
 
+const MinPasswordLength = 8
+
 var (
 	ErrUserNotFound       = errors.New("user not found")
 	ErrDuplicateEmail     = errors.New("email already exists")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrPasswordTooShort   = fmt.Errorf("password must be at least %d characters", MinPasswordLength)
 )
 
 type User struct {
@@ -46,6 +50,9 @@ func (params CreateUserParams) Validate() error {
 	}
 	if params.Password == "" {
 		return errors.New("password is required")
+	}
+	if len(params.Password) < MinPasswordLength {
+		return ErrPasswordTooShort
 	}
 	return nil
 }
@@ -89,6 +96,34 @@ func GetUserByEmail(ctx context.Context, db *sqlx.DB, email string) (User, error
 		return User{}, errors.New("email is required")
 	}
 	return getUserByEmail(ctx, db, email)
+}
+
+func ChangePassword(ctx context.Context, db *sqlx.DB, userID, currentPassword, newPassword string) error {
+	if db == nil {
+		return errors.New("db is required")
+	}
+	if userID == "" {
+		return errors.New("userID is required")
+	}
+	if len(newPassword) < MinPasswordLength {
+		return ErrPasswordTooShort
+	}
+	hash, err := getPasswordHash(ctx, db, userID)
+	if err != nil {
+		return err
+	}
+	ok, err := verifyPassword(hash, currentPassword)
+	if err != nil {
+		return fmt.Errorf("verify password: %w", err)
+	}
+	if !ok {
+		return ErrInvalidCredentials
+	}
+	newHash, err := hashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+	return updatePassword(ctx, db, userID, newHash)
 }
 
 func ArchiveUser(ctx context.Context, db *sqlx.DB, id string) error {

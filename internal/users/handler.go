@@ -22,6 +22,7 @@ func RegisterRoutes(mux *http.ServeMux, db *sqlx.DB) {
 	mux.HandleFunc("POST /auth/login", handleLogin(db))
 	mux.HandleFunc("GET /auth/me", handleMe(db))
 	mux.HandleFunc("POST /auth/logout", handleLogout(db))
+	mux.HandleFunc("POST /auth/change-password", handleChangePassword(db))
 }
 
 func fail(w http.ResponseWriter, err error) {
@@ -153,6 +154,42 @@ func handleLogout(db *sqlx.DB) http.HandlerFunc {
 		}
 		clearSessionCookie(w)
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func handleChangePassword(db *sqlx.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := authz.UserIDFromContext(r.Context())
+		if err != nil {
+			respond.Error(w, http.StatusUnauthorized, "authentication required")
+			return
+		}
+		var body struct {
+			CurrentPassword string `json:"current_password"`
+			NewPassword     string `json:"new_password"`
+		}
+		if err := respond.Decode(r, &body); err != nil {
+			respond.Error(w, http.StatusBadRequest, "invalid JSON")
+			return
+		}
+		if err := ChangePassword(r.Context(), db, userID, body.CurrentPassword, body.NewPassword); err != nil {
+			if errors.Is(err, ErrInvalidCredentials) {
+				respond.Error(w, http.StatusUnauthorized, "current password is incorrect")
+				return
+			}
+			if errors.Is(err, ErrPasswordTooShort) {
+				respond.Error(w, http.StatusUnprocessableEntity, err.Error())
+				return
+			}
+			fail(w, err)
+			return
+		}
+		// Invalidate all other sessions, preserving the current one
+		cookie, _ := r.Cookie("session_id")
+		if cookie != nil && cookie.Value != "" {
+			_ = sessions.DeleteByUserID(r.Context(), db, userID, cookie.Value)
+		}
+		respond.JSON(w, http.StatusOK, map[string]string{"status": "password_changed"})
 	}
 }
 

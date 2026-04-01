@@ -99,6 +99,17 @@ func validateSession(ctx context.Context, db *sqlx.DB, rawToken string) (Session
 	return session, nil
 }
 
+func deleteByUserID(ctx context.Context, db *sqlx.DB, userID, exceptTokenHash string) error {
+	_, err := db.ExecContext(ctx,
+		`DELETE FROM sessions WHERE user_id = $1 AND id != $2`,
+		userID, exceptTokenHash,
+	)
+	if err != nil {
+		return fmt.Errorf("delete sessions by user: %w", err)
+	}
+	return nil
+}
+
 func deleteSession(ctx context.Context, db *sqlx.DB, rawToken string) error {
 	hashedToken := HashToken(rawToken)
 	_, err := db.ExecContext(ctx,

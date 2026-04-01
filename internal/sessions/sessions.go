@@ -90,6 +90,19 @@ func CreateTx(ctx context.Context, tx *sqlx.Tx, userID string) (CreateResult, er
 	return createSessionTx(ctx, tx, userID, DefaultSessionTTL)
 }
 
+// DeleteByUserID deletes all sessions for a user except the one identified
+// by exceptRawToken (the current session to preserve).
+func DeleteByUserID(ctx context.Context, db *sqlx.DB, userID, exceptRawToken string) error {
+	if db == nil {
+		return errors.New("db is required")
+	}
+	if userID == "" {
+		return errors.New("userID is required")
+	}
+	exceptHash := HashToken(exceptRawToken)
+	return deleteByUserID(ctx, db, userID, exceptHash)
+}
+
 // IsAuthError reports whether err means the session should be treated as
 // unauthenticated rather than as an internal server failure.
 func IsAuthError(err error) bool {

@@ -112,6 +112,39 @@ func authenticateUser(ctx context.Context, db *sqlx.DB, email, password string) 
 	return user, nil
 }
 
+func getPasswordHash(ctx context.Context, db *sqlx.DB, userID string) (string, error) {
+	var hash string
+	err := db.GetContext(ctx, &hash,
+		`SELECT password_hash FROM app_users WHERE id = $1 AND archived_at IS NULL`,
+		userID,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrUserNotFound
+		}
+		return "", fmt.Errorf("get password hash: %w", err)
+	}
+	return hash, nil
+}
+
+func updatePassword(ctx context.Context, db *sqlx.DB, userID, newHash string) error {
+	res, err := db.ExecContext(ctx,
+		`UPDATE app_users SET password_hash = $2, updated_at = NOW() WHERE id = $1 AND archived_at IS NULL`,
+		userID, newHash,
+	)
+	if err != nil {
+		return fmt.Errorf("update password: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("update password rows: %w", err)
+	}
+	if n == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
 func archiveUser(ctx context.Context, db *sqlx.DB, id string) error {
 	res, err := db.ExecContext(ctx,
 		`UPDATE app_users
