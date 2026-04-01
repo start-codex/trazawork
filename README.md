@@ -44,7 +44,7 @@ What is shipped today:
 - Board drag-and-drop: move issues between columns and reorder within columns.
 - Issue detail page: view and edit title, description, priority, assignee, due date.
 - Basic board filters: client-side filtering by assignee, priority, and issue type.
-- Instance bootstrap: first-install flow creates the initial global admin.
+- Instance bootstrap: first-install setup wizard creates the initial global admin.
 - Local email/password authentication with server-side sessions.
 - Workspace and project membership enforcement with admin/owner roles.
 - Internationalization: English and Spanish.

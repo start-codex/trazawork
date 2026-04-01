@@ -11,6 +11,8 @@ Contributors should add ongoing changes to the `Unreleased` section. When a mile
 ## [Unreleased]
 
 ### Added
+- Added setup wizard at `/setup` for first-install instance configuration
+- Added instance status check guards on login and app layouts
 - Added instance bootstrap flow: `POST /instance/bootstrap` creates first admin user atomically with `SELECT FOR UPDATE`
 - Added `GET /instance/status` endpoint for checking initialization state
 - Added `is_instance_admin` field to users for instance-level administration

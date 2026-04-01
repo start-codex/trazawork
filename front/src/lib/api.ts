@@ -41,6 +41,13 @@ const post = <T>(path: string, body: unknown) => request<T>('POST', path, body);
 const put = <T>(path: string, body: unknown) => request<T>('PUT', path, body);
 const del = (path: string) => request<void>('DELETE', path);
 
+// --- Instance ---
+export const instance = {
+	status: () => get<{ initialized: boolean }>('/instance/status'),
+	bootstrap: (body: { email: string; name: string; password: string }) =>
+		post<User>('/instance/bootstrap', body)
+};
+
 // --- Auth ---
 export const auth = {
 	login: (body: { email: string; password: string }) => post<User>('/auth/login', body),

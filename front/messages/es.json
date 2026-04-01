@@ -75,6 +75,17 @@
   "settings_users_title": "Usuarios",
   "settings_account_title": "Cuenta",
 
+  "setup_title": "Configurar Tookly",
+  "setup_description": "Crea la primera cuenta de administrador.",
+  "setup_name": "Nombre",
+  "setup_email": "Correo electrónico",
+  "setup_password": "Contraseña",
+  "setup_confirm_password": "Confirmar contraseña",
+  "setup_submit": "Crear cuenta de administrador",
+  "setup_creating": "Creando…",
+  "setup_passwords_mismatch": "Las contraseñas no coinciden",
+  "setup_error": "Error al crear la cuenta de administrador",
+
   "board_filter_assignee": "Asignado",
   "board_filter_priority": "Prioridad",
   "board_filter_type": "Tipo",

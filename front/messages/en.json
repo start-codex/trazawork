@@ -75,6 +75,17 @@
   "settings_users_title": "Users",
   "settings_account_title": "Account",
 
+  "setup_title": "Set up Tookly",
+  "setup_description": "Create the first administrator account.",
+  "setup_name": "Name",
+  "setup_email": "Email",
+  "setup_password": "Password",
+  "setup_confirm_password": "Confirm password",
+  "setup_submit": "Create admin account",
+  "setup_creating": "Creating…",
+  "setup_passwords_mismatch": "Passwords do not match",
+  "setup_error": "Failed to create admin account",
+
   "board_filter_assignee": "Assignee",
   "board_filter_priority": "Priority",
   "board_filter_type": "Type",
