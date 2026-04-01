@@ -78,6 +78,18 @@ type CreateResult struct {
 	RawToken string
 }
 
+// CreateTx creates a new session within an existing transaction.
+// Used for atomic operations like instance bootstrap.
+func CreateTx(ctx context.Context, tx *sqlx.Tx, userID string) (CreateResult, error) {
+	if tx == nil {
+		return CreateResult{}, errors.New("tx is required")
+	}
+	if userID == "" {
+		return CreateResult{}, errors.New("userID is required")
+	}
+	return createSessionTx(ctx, tx, userID, DefaultSessionTTL)
+}
+
 // IsAuthError reports whether err means the session should be treated as
 // unauthenticated rather than as an internal server failure.
 func IsAuthError(err error) bool {

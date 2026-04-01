@@ -103,6 +103,53 @@ func TestRequireWorkspaceMembership_ArchivedWorkspace(t *testing.T) {
 	}
 }
 
+func TestRequireInstanceAdmin_Integration(t *testing.T) {
+	db := testpg.Open(t)
+	testpg.EnsureMigrated(t, db)
+
+	admin := testpg.SeedUser(t, db)
+	nonAdmin := testpg.SeedUser(t, db)
+
+	// Set one user as instance admin
+	db.ExecContext(context.Background(),
+		`UPDATE app_users SET is_instance_admin = true WHERE id = $1`, admin)
+	t.Cleanup(func() {
+		db.ExecContext(context.Background(),
+			`UPDATE app_users SET is_instance_admin = false WHERE id = $1`, admin)
+	})
+
+	tests := []struct {
+		name    string
+		userID  string
+		wantErr error
+	}{
+		{name: "admin ok", userID: admin},
+		{name: "non-admin forbidden", userID: nonAdmin, wantErr: ErrForbidden},
+		{name: "nonexistent user forbidden", userID: "00000000-0000-0000-0000-000000000000", wantErr: ErrForbidden},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := WithUserID(context.Background(), tt.userID)
+			err := RequireInstanceAdmin(ctx, db)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("error = %v, want %v", err, tt.wantErr)
+			}
+		})
+	}
+
+	// Test archived admin
+	t.Run("archived admin forbidden", func(t *testing.T) {
+		archivedAdmin := testpg.SeedUser(t, db)
+		db.ExecContext(context.Background(),
+			`UPDATE app_users SET is_instance_admin = true, archived_at = NOW() WHERE id = $1`, archivedAdmin)
+		ctx := WithUserID(context.Background(), archivedAdmin)
+		err := RequireInstanceAdmin(ctx, db)
+		if !errors.Is(err, ErrForbidden) {
+			t.Fatalf("archived admin error = %v, want ErrForbidden", err)
+		}
+	})
+}
+
 func TestMemberRole_Integration(t *testing.T) {
 	db := testpg.Open(t)
 	testpg.EnsureMigrated(t, db)

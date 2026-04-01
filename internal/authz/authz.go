@@ -70,6 +70,26 @@ func RequireWorkspaceMembership(ctx context.Context, db *sqlx.DB, workspaceID st
 	return nil
 }
 
+// RequireInstanceAdmin verifies that the authenticated user is an instance administrator.
+// Returns ErrForbidden if the user is not an instance admin or is archived.
+func RequireInstanceAdmin(ctx context.Context, db *sqlx.DB) error {
+	if db == nil {
+		return errors.New("db is required")
+	}
+	userID, err := UserIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	isAdmin, err := isInstanceAdmin(ctx, db, userID)
+	if err != nil {
+		return fmt.Errorf("require instance admin: %w", err)
+	}
+	if !isAdmin {
+		return ErrForbidden
+	}
+	return nil
+}
+
 // RequireWorkspaceAdmin verifies that the authenticated user has admin or owner
 // role in the given workspace. Returns ErrWorkspaceNotFound if the workspace
 // does not exist (or is archived), ErrForbidden if the user is not admin/owner.

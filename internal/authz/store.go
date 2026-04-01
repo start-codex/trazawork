@@ -52,6 +52,21 @@ func memberRole(ctx context.Context, db *sqlx.DB, workspaceID, userID string) (s
 	return role, nil
 }
 
+func isInstanceAdmin(ctx context.Context, db *sqlx.DB, userID string) (bool, error) {
+	var isAdmin bool
+	err := db.GetContext(ctx, &isAdmin,
+		`SELECT is_instance_admin FROM app_users WHERE id = $1 AND archived_at IS NULL`,
+		userID,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, ErrForbidden
+		}
+		return false, fmt.Errorf("check instance admin: %w", err)
+	}
+	return isAdmin, nil
+}
+
 func projectWorkspaceID(ctx context.Context, db *sqlx.DB, projectID string) (string, error) {
 	var wsID string
 	err := db.GetContext(ctx, &wsID,

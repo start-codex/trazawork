@@ -90,6 +90,33 @@ func TestIsInitialized_MissingRow(t *testing.T) {
 	}
 }
 
+func TestBootstrap_CorruptedInitialized(t *testing.T) {
+	db := testpg.Open(t)
+	testpg.EnsureMigrated(t, db)
+
+	ctx := context.Background()
+	// Corrupt the initialized value
+	SetConfig(ctx, db, "initialized", "corrupted")
+	t.Cleanup(func() {
+		SetConfig(ctx, db, "initialized", "false")
+	})
+
+	_, err := Bootstrap(ctx, db, BootstrapParams{
+		Email:    "admin@test.local",
+		Name:     "Admin",
+		Password: "password123",
+	})
+	if err == nil {
+		t.Fatal("Bootstrap with corrupted initialized should return error, got nil")
+	}
+
+	// Verify it didn't set initialized back to true
+	val, _ := GetConfig(ctx, db, "initialized")
+	if val == "true" {
+		t.Fatal("corrupted bootstrap should not have set initialized=true")
+	}
+}
+
 func TestIsInitialized_InvalidValue(t *testing.T) {
 	db := testpg.Open(t)
 	testpg.EnsureMigrated(t, db)

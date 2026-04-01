@@ -7,13 +7,96 @@ package instance
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/start-codex/tookly/internal/sessions"
+	"github.com/start-codex/tookly/internal/users"
 )
 
-var ErrConfigNotFound = errors.New("config key not found")
+var (
+	ErrConfigNotFound     = errors.New("config key not found")
+	ErrAlreadyInitialized = errors.New("instance already initialized")
+)
+
+type BootstrapParams struct {
+	Email    string
+	Name     string
+	Password string
+}
+
+func (p BootstrapParams) Validate() error {
+	return users.CreateUserParams{
+		Email:    p.Email,
+		Name:     p.Name,
+		Password: p.Password,
+	}.Validate()
+}
+
+type BootstrapResult struct {
+	User     users.User
+	RawToken string
+}
+
+func Bootstrap(ctx context.Context, db *sqlx.DB, params BootstrapParams) (BootstrapResult, error) {
+	if db == nil {
+		return BootstrapResult{}, errors.New("db is required")
+	}
+	if err := params.Validate(); err != nil {
+		return BootstrapResult{}, err
+	}
+
+	tx, err := db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return BootstrapResult{}, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Lock the initialized row to prevent concurrent bootstrap
+	var val string
+	err = tx.GetContext(ctx, &val,
+		`SELECT value FROM instance_config WHERE key = 'initialized' FOR UPDATE`)
+	if err != nil {
+		return BootstrapResult{}, fmt.Errorf("lock initialized: %w", err)
+	}
+	if val == "true" {
+		return BootstrapResult{}, ErrAlreadyInitialized
+	}
+	if val != "false" {
+		return BootstrapResult{}, fmt.Errorf("invalid initialized value: %q — cannot bootstrap", val)
+	}
+
+	// Create the instance admin user
+	user, err := users.CreateInstanceAdminTx(ctx, tx, users.CreateUserParams{
+		Email:    params.Email,
+		Name:     params.Name,
+		Password: params.Password,
+	})
+	if err != nil {
+		return BootstrapResult{}, fmt.Errorf("create admin: %w", err)
+	}
+
+	// Create session for the new admin
+	sessionResult, err := sessions.CreateTx(ctx, tx, user.ID)
+	if err != nil {
+		return BootstrapResult{}, fmt.Errorf("create session: %w", err)
+	}
+
+	// Mark instance as initialized
+	_, err = tx.ExecContext(ctx,
+		`UPDATE instance_config SET value = 'true', updated_at = NOW() WHERE key = 'initialized'`)
+	if err != nil {
+		return BootstrapResult{}, fmt.Errorf("set initialized: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return BootstrapResult{}, fmt.Errorf("commit: %w", err)
+	}
+
+	return BootstrapResult{User: user, RawToken: sessionResult.RawToken}, nil
+}
 
 func GetConfig(ctx context.Context, db *sqlx.DB, key string) (string, error) {
 	if db == nil {

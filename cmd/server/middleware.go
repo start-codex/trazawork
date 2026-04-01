@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"log/slog"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/start-codex/tookly/internal/authz"
+	"github.com/start-codex/tookly/internal/instance"
 	"github.com/start-codex/tookly/internal/respond"
 	"github.com/start-codex/tookly/internal/sessions"
 )
@@ -56,20 +58,53 @@ func withLogger(next http.Handler) http.Handler {
 	})
 }
 
-var authAllowlist = []struct{ method, path string }{
-	{"POST", "/users"},
+var staticPublicRoutes = []struct{ method, path string }{
 	{"POST", "/auth/login"},
 	{"GET", "/auth/me"},
 	{"POST", "/auth/logout"},
+	{"GET", "/instance/status"},
+	{"POST", "/instance/bootstrap"},
+}
+
+// isPublicRoute returns:
+//   - public=true: route is allowed without auth
+//   - block=true: route is blocked with 409 (pre-bootstrap)
+//   - err!=nil: internal error (corrupted state)
+func isPublicRoute(ctx context.Context, method, path string, db *sqlx.DB) (public bool, block bool, err error) {
+	for _, route := range staticPublicRoutes {
+		if method == route.method && path == route.path {
+			return true, false, nil
+		}
+	}
+	// POST /users is public only after the instance is initialized.
+	// Before bootstrap, user creation is blocked (409).
+	if method == "POST" && path == "/users" {
+		init, initErr := instance.IsInitialized(ctx, db)
+		if initErr != nil {
+			return false, false, initErr
+		}
+		if !init {
+			return false, true, nil // block with 409
+		}
+		return true, false, nil // public after bootstrap
+	}
+	return false, false, nil
 }
 
 func withAuth(next http.Handler, db *sqlx.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for _, route := range authAllowlist {
-			if r.Method == route.method && r.URL.Path == route.path {
-				next.ServeHTTP(w, r)
-				return
-			}
+		public, block, routeErr := isPublicRoute(r.Context(), r.Method, r.URL.Path, db)
+		if routeErr != nil {
+			respond.Error(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+		if block {
+			respond.Error(w, http.StatusConflict, "instance not initialized — use POST /instance/bootstrap")
+			return
+		}
+		if public {
+			next.ServeHTTP(w, r)
+			return
 		}
 
 		cookie, err := r.Cookie("session_id")
