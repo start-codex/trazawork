@@ -11,6 +11,9 @@ Contributors should add ongoing changes to the `Unreleased` section. When a mile
 ## [Unreleased]
 
 ### Added
+- Added change password flow: `POST /auth/change-password` with session invalidation
+- Added `ChangePasswordForm` shared component for account settings
+- Added minimum password length enforcement (8 characters)
 - Added instance admin settings page at `/admin` with SMTP configuration form
 - Added `is_instance_admin` to frontend User type
 - Added "Admin" link in user dropdown for instance admins

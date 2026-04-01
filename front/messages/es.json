@@ -75,6 +75,17 @@
   "settings_users_title": "Usuarios",
   "settings_account_title": "Cuenta",
 
+  "account_change_password": "Cambiar contraseña",
+  "account_current_password": "Contraseña actual",
+  "account_new_password": "Nueva contraseña",
+  "account_confirm_password": "Confirmar nueva contraseña",
+  "account_password_changed": "Contraseña cambiada exitosamente",
+  "account_passwords_mismatch": "Las contraseñas no coinciden",
+  "account_current_password_invalid": "La contraseña actual es incorrecta",
+  "account_password_too_short": "La contraseña debe tener al menos 8 caracteres",
+  "account_save": "Guardar",
+  "account_saving": "Guardando…",
+
   "nav_admin": "Admin",
   "admin_title": "Administración",
   "admin_smtp_title": "Configuración SMTP",

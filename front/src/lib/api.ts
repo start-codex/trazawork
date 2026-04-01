@@ -62,7 +62,9 @@ export const instance = {
 export const auth = {
 	login: (body: { email: string; password: string }) => post<User>('/auth/login', body),
 	me: () => get<{ authenticated: boolean; user?: User }>('/auth/me'),
-	logout: () => post<void>('/auth/logout', {})
+	logout: () => post<void>('/auth/logout', {}),
+	changePassword: (body: { current_password: string; new_password: string }) =>
+		post<void>('/auth/change-password', body)
 };
 
 // --- Users ---
